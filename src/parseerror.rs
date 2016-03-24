@@ -2,7 +2,9 @@
 pub enum ParseErrorKind {
 	MissingSpace,
 	MissingOperator,
-	InternalIndexError,
+	MissingCommandAfterSpace,
+	NoSuchPath,
+	NoSuchOperation,
 }
 
 #[derive(Debug)]

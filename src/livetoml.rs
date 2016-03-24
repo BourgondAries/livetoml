@@ -1,11 +1,37 @@
 use toml;
+use toml::Value;
 use std::error::Error;
 use parseerror::{ParseError, ParseErrorKind};
 
 
 pub fn execute_command(table: &mut toml::Value, command: &str) -> Result<(), ParseError> {
 	let result = try!(parse_command(command));
+	let (lookup, operation, value) = result;
+	let mut atom = table.lookup(lookup);
+	if let Some(ref mut atom) = atom {
+
+		// operate_on_value(atom, operation, value);
+	} else {
+		return Err(ParseError::new(ParseErrorKind::NoSuchPath));
+	}
 	Ok(())
+}
+
+fn operate_on_value(atom: &mut Value, operation: &str, value: &str)
+	-> Result<(), ParseError> {
+	match operation {
+		"=" => assign_to_atom(atom, value),
+		_ => Err(ParseError::new(ParseErrorKind::NoSuchOperation)),
+	}
+}
+
+fn assign_to_atom(atom: &mut Value, value: &str) -> Result<(), ParseError> {
+	match atom {
+		&mut Value::Integer(ref mut integer) =>
+			panic!("{}", integer),
+		_ => panic!("Not an integer"),
+	}
+	// *integer = value.parse::<i64>().unwrap(),
 }
 
 fn parse_command<'a>(command: &'a str) -> Result<(&'a str, &'a str, &'a str), ParseError>  {
@@ -17,10 +43,10 @@ fn parse_command<'a>(command: &'a str) -> Result<(&'a str, &'a str, &'a str), Pa
 }
 
 fn split_at(slice: &str, index: usize) -> Result<(&str, &str), ParseError> {
-	if index < slice.len() {
+	if index + 1 < slice.len() {
 		Ok((&slice[..index], &slice[index+1..]))
 	} else {
-		Err(ParseError::new(ParseErrorKind::InternalIndexError))
+		Err(ParseError::new(ParseErrorKind::MissingCommandAfterSpace))
 	}
 }
 
@@ -33,4 +59,38 @@ fn find_space_from(slice: &str) -> Result<usize, ParseError> {
 		accumulator += 1;
 	}
 	Err(ParseError::new(ParseErrorKind::MissingSpace))
+}
+
+use std::str::Split;
+fn lookup_mut_recurse<'a>(value: &'a mut Value, matches: &mut Split<'a, char>)
+	-> Option<&'a mut Value> {
+	if let Some(key) = matches.next() {
+		match *value {
+			Value::Table(ref mut hm) => {
+				match hm.get_mut(key) {
+					Some(v) => return lookup_mut_recurse(v, matches),
+					None => return None,
+				}
+			},
+			Value::Array(ref mut v) => {
+				match key.parse::<usize>().ok() {
+					Some(idx) if idx < v.len()
+						=> return lookup_mut_recurse(&mut v[idx], matches),
+					_ => return None,
+				}
+			},
+		_ => return None
+		}
+	}
+
+	Some(value)
+}
+
+fn lookup_mut<'a>(value: &'a mut Value, path: &'a str) -> Option<&'a mut Value> {
+	if path.len() == 0 {
+		return Some(value)
+	}
+
+	let mut matches = path.split('.');
+	lookup_mut_recurse(value, &mut matches)
 }
