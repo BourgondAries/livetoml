@@ -7,10 +7,9 @@ use parseerror::{ParseError, ParseErrorKind};
 pub fn execute_command(table: &mut toml::Value, command: &str) -> Result<(), ParseError> {
 	let result = try!(parse_command(command));
 	let (lookup, operation, value) = result;
-	let mut atom = table.lookup(lookup);
+	let mut atom = lookup_mut(table, lookup);
 	if let Some(ref mut atom) = atom {
-
-		// operate_on_value(atom, operation, value);
+		 operate_on_value(atom, operation, value);
 	} else {
 		return Err(ParseError::new(ParseErrorKind::NoSuchPath));
 	}
@@ -26,12 +25,22 @@ fn operate_on_value(atom: &mut Value, operation: &str, value: &str)
 }
 
 fn assign_to_atom(atom: &mut Value, value: &str) -> Result<(), ParseError> {
-	match atom {
-		&mut Value::Integer(ref mut integer) =>
-			panic!("{}", integer),
+	match *atom {
+		Value::Integer(ref mut integer) => {
+			*integer = match value.parse::<i64>() {
+				Ok(v) => v,
+				Err(_) => return Err(ParseError::new(ParseErrorKind::TypeMismatch)),
+			};
+		},
+		Value::Float(ref mut float) => {
+			*float = match value.parse::<f64>() {
+				Ok(v) => v,
+				Err(_) => return Err(ParseError::new(ParseErrorKind::TypeMismatch)),
+			};
+		}
 		_ => panic!("Not an integer"),
 	}
-	// *integer = value.parse::<i64>().unwrap(),
+	Ok(())
 }
 
 fn parse_command<'a>(command: &'a str) -> Result<(&'a str, &'a str, &'a str), ParseError>  {

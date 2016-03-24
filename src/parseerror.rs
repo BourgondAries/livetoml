@@ -5,6 +5,7 @@ pub enum ParseErrorKind {
 	MissingCommandAfterSpace,
 	NoSuchPath,
 	NoSuchOperation,
+	TypeMismatch,
 }
 
 #[derive(Debug)]
