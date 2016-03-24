@@ -6,6 +6,8 @@ pub enum ParseErrorKind {
 	NoSuchPath,
 	NoSuchOperation,
 	TypeMismatch,
+	NotABooleanValue,
+	NoAssignmentHandler,
 }
 
 #[derive(Debug)]

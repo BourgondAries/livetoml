@@ -6,7 +6,6 @@ pub mod parseerror;
 #[cfg(test)]
 mod tests {
 	use toml::Value;
-	use toml;
 	use livetoml;
 
 	#[test]
@@ -41,6 +40,34 @@ mod tests {
 			.expect("Could not execute command");
 		let value = table.lookup("table.value");
 		assert_eq!(value, Some(&Value::String(String::from("World"))));
+	}
+
+	#[test]
+	fn bool_reassignment() {
+		let mut table: Value = "[table] value = true".parse().unwrap();
+		livetoml::execute_command(&mut table, "table.value = false")
+			.expect("Could not execute command");
+		let value = table.lookup("table.value");
+		assert_eq!(value, Some(&Value::Boolean(false)));
+	}
+
+	#[test]
+	fn manual() {
+		let mut table: Value = "[table] value = true\nheight = 0.0\nip = \"0.1\"".parse().unwrap();
+		let mut line = String::new();
+		use std::io;
+		use std::io::Write;
+		while io::stdin().read_line(&mut line).expect("It's ok") > 0 {
+			{
+				let trimmed = line.trim();
+				match livetoml::execute_command(&mut table, trimmed) {
+					Ok(()) => {}
+					Err(err) => { writeln!(&mut io::stderr(), "{:?}", err); }
+				}
+				writeln!(&mut io::stderr(), "{:?}", table);
+			}
+			line = String::new();
+		}
 	}
 
 }

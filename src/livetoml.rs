@@ -1,6 +1,5 @@
 use toml;
 use toml::Value;
-use std::error::Error;
 use parseerror::{ParseError, ParseErrorKind};
 
 
@@ -9,7 +8,7 @@ pub fn execute_command(table: &mut toml::Value, command: &str) -> Result<(), Par
 	let (lookup, operation, value) = result;
 	let mut atom = lookup_mut(table, lookup);
 	if let Some(ref mut atom) = atom {
-		 operate_on_value(atom, operation, value);
+		 try!(operate_on_value(atom, operation, value));
 	} else {
 		return Err(ParseError::new(ParseErrorKind::NoSuchPath));
 	}
@@ -41,7 +40,14 @@ fn assign_to_atom(atom: &mut Value, value: &str) -> Result<(), ParseError> {
 		Value::String(ref mut string) => {
 			*string = String::from(value);
 		},
-		_ => panic!("Not an integer"),
+		Value::Boolean(ref mut boolean) => {
+			*boolean = match value {
+				"true" => true,
+				"false" => false,
+				_ => return Err(ParseError::new(ParseErrorKind::NotABooleanValue)),
+			};
+		},
+		_ => return Err(ParseError::new(ParseErrorKind::NoAssignmentHandler)),
 	}
 	Ok(())
 }
