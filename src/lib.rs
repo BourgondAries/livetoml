@@ -33,4 +33,14 @@ mod tests {
 		let value = table.lookup("table.value");
 		assert_eq!(value, Some(&Value::Float(2.0)));
 	}
+
+	#[test]
+	fn string_reassignment() {
+		let mut table: Value = "[table] value = \"Hello\"".parse().unwrap();
+		livetoml::execute_command(&mut table, "table.value = World")
+			.expect("Could not execute command");
+		let value = table.lookup("table.value");
+		assert_eq!(value, Some(&Value::String(String::from("World"))));
+	}
+
 }

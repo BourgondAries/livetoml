@@ -37,7 +37,10 @@ fn assign_to_atom(atom: &mut Value, value: &str) -> Result<(), ParseError> {
 				Ok(v) => v,
 				Err(_) => return Err(ParseError::new(ParseErrorKind::TypeMismatch)),
 			};
-		}
+		},
+		Value::String(ref mut string) => {
+			*string = String::from(value);
+		},
 		_ => panic!("Not an integer"),
 	}
 	Ok(())
