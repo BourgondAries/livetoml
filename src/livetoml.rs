@@ -2,6 +2,15 @@ use toml;
 use toml::Value;
 use parseerror::{ParseError, ParseErrorKind};
 
+pub trait Interpret {
+	fn eval(&mut self, command: &str) -> Result<(), ParseError>;
+}
+
+impl Interpret for toml::Value {
+	fn eval(&mut self, command: &str) -> Result<(), ParseError> {
+		execute_command(self, command)
+	}
+}
 
 pub fn execute_command(table: &mut toml::Value, command: &str) -> Result<(), ParseError> {
 	let result = try!(parse_command(command));
@@ -80,6 +89,7 @@ fn find_space_from(slice: &str) -> Result<usize, ParseError> {
 }
 
 use std::str::Split;
+
 fn lookup_mut_recurse<'a>(value: &'a mut Value, matches: &mut Split<'a, char>)
 	-> Option<&'a mut Value> {
 	if let Some(key) = matches.next() {
