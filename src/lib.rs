@@ -1,73 +1,100 @@
 extern crate toml;
 
-pub mod livetoml;
-pub mod parseerror;
+use std::io::Write;
+
+macro_rules! debug {
+	($($arg:tt)*) => {{
+		writeln!(&mut ::std::io::stderr(), $($arg)*)
+			.expect("failed printing to sterr");
+	}}
+}
+
+trait Live {
+	fn update(&mut self, tree: &str);
+}
+
+/*
+pub enum Value {
+	String(String),
+	Integer(i64),
+	Float(f64),
+	Boolean(bool),
+	Datetime(String),
+	Array(Array),
+	Table(Table),
+}
+*/
+
+fn recursive_update(on: &mut toml::Value, by: &toml::Value) {
+	use toml::Value;
+	// Try updating a single string first
+	debug!("on: ==== {:?}", on);
+	debug!("by: ==== {:?}", by);
+	match by {
+		&Value::String(ref string) => {
+			if let Value::String(ref mut to_string) = *on {
+				*to_string = string.clone();
+				debug!("Overwrote String!");
+			} else {
+				debug!("You don goofd");
+			}
+		}
+		&Value::Integer(ref integer) => {
+			if let Value::Integer(ref mut to_integer) = *on {
+				*to_integer = *integer;
+				debug!("Overwrote String!");
+			} else {
+				debug!("You don goofd");
+			}
+		}
+		_ => {
+			// debug!("{:?}", val);
+		}
+	}
+}
+
+impl Live for toml::Value {
+
+	fn update(&mut self, tree: &str) {
+		use toml::Value;
+
+		debug!("{:?}", self);
+
+		let mut tree: toml::Value = tree.parse().unwrap();
+		match tree {
+			Value::Table(ref mut table) => {
+				if let Value::Table(ref mut onto) = *self {
+					for (key, ref value) in table {
+						recursive_update(onto.get_mut(key).unwrap(), value);
+					}
+				} else {
+					panic!("should not happen");
+				}
+			}
+			_ => {}
+		};
+	}
+
+}
 
 #[cfg(test)]
 mod tests {
-	use toml::Value;
-	use livetoml;
+	use toml;
+	use Live;
+	use std::io::Write;
 
 	#[test]
-	fn integer_assignment() {
-		let table: Value = "[table] value = 1".parse().unwrap();
-		let value = table.lookup("table.value");
-		assert_eq!(value, Some(&Value::Integer(1)));
-	}
+	fn write() {
+		let mut tree: toml::Value = r#"
+			value = 0
+			name = "ok dude"
+		"#.parse().unwrap();
+		tree.update(r#"
+			value = 100
+			name = "whatever"
+		"#);
 
-	#[test]
-	fn integer_reassignment() {
-		let mut table: Value = "[table] value = 1".parse().unwrap();
-		livetoml::execute_command(&mut table, "table.value = 2")
-			.expect("Could not execute command");
-		let value = table.lookup("table.value");
-		assert_eq!(value, Some(&Value::Integer(2)));
-	}
-
-	#[test]
-	fn float_reassignment() {
-		let mut table: Value = "[table] value = 1.0".parse().unwrap();
-		livetoml::execute_command(&mut table, "table.value = 2.0")
-			.expect("Could not execute command");
-		let value = table.lookup("table.value");
-		assert_eq!(value, Some(&Value::Float(2.0)));
-	}
-
-	#[test]
-	fn string_reassignment() {
-		let mut table: Value = "[table] value = \"Hello\"".parse().unwrap();
-		livetoml::execute_command(&mut table, "table.value = World")
-			.expect("Could not execute command");
-		let value = table.lookup("table.value");
-		assert_eq!(value, Some(&Value::String(String::from("World"))));
-	}
-
-	#[test]
-	fn bool_reassignment() {
-		let mut table: Value = "[table] value = true".parse().unwrap();
-		livetoml::execute_command(&mut table, "table.value = false")
-			.expect("Could not execute command");
-		let value = table.lookup("table.value");
-		assert_eq!(value, Some(&Value::Boolean(false)));
-	}
-
-	#[test]
-	fn manual() {
-		let mut table: Value = "[table] value = true\nheight = 0.0\nip = \"0.1\"".parse().unwrap();
-		let mut line = String::new();
-		use std::io;
-		use std::io::Write;
-		while io::stdin().read_line(&mut line).expect("It's ok") > 0 {
-			{
-				let trimmed = line.trim();
-				match livetoml::execute_command(&mut table, trimmed) {
-					Ok(()) => {}
-					Err(err) => { writeln!(&mut io::stderr(), "{:?}", err); }
-				}
-				writeln!(&mut io::stderr(), "{:?}", table);
-			}
-			line = String::new();
-		}
+		debug!("{:?}", tree);
 	}
 
 }
