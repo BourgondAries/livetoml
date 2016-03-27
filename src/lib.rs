@@ -42,7 +42,38 @@ fn recursive_update(on: &mut toml::Value, by: &toml::Value) {
 		&Value::Integer(ref integer) => {
 			if let Value::Integer(ref mut to_integer) = *on {
 				*to_integer = *integer;
-				debug!("Overwrote String!");
+				debug!("Overwrote Int!");
+			} else {
+				debug!("You don goofd");
+			}
+		}
+		&Value::Float(ref integer) => {
+			if let Value::Float(ref mut to_integer) = *on {
+				*to_integer = *integer;
+				debug!("Overwrote Float!");
+			} else {
+				debug!("You don goofd");
+			}
+		}
+		&Value::Boolean(ref integer) => {
+			if let Value::Boolean(ref mut to_integer) = *on {
+				*to_integer = *integer;
+				debug!("Overwrote bool!");
+			} else {
+				debug!("You don goofd");
+			}
+		}
+		&Value::Datetime(ref integer) => {
+			if let Value::Datetime(ref mut to_integer) = *on {
+				*to_integer = integer.clone();
+				debug!("Overwrote bool!");
+			} else {
+				debug!("You don goofd");
+			}
+		}
+		&Value::Array(ref integer) => {
+			if let Value::Array(ref mut to_integer) = *on {
+
 			} else {
 				debug!("You don goofd");
 			}
