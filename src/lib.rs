@@ -1,4 +1,6 @@
 extern crate toml;
+use std::str::CharIndices;
+mod parser;
 
 use std::io::Write;
 
@@ -84,28 +86,23 @@ fn recursive_update(on: &mut toml::Value, by: &toml::Value) {
 	}
 }
 
+fn expect(ch: char) -> bool {
+	false
+}
+
+fn string_literal<'a>(index: &mut CharIndices<'a>) -> Option<String> {
+	Some(String::from("ok"))
+}
+
+fn key(command: &str) -> &str {
+	command
+}
+
 impl Live for toml::Value {
 
-	fn update(&mut self, tree: &str) {
+	fn update(&mut self, command: &str) {
 		use toml::Value;
-
-		debug!("{:?}", self);
-
-		let mut tree: toml::Value = tree.parse().unwrap();
-		match tree {
-			Value::Table(ref mut table) => {
-				if let Value::Table(ref mut onto) = *self {
-					for (key, ref value) in table {
-						recursive_update(onto.get_mut(key).unwrap(), value);
-					}
-				} else {
-					panic!("should not happen");
-				}
-			}
-			_ => {}
-		};
 	}
-
 }
 
 #[cfg(test)]
@@ -120,10 +117,6 @@ mod tests {
 			value = 0
 			name = "ok dude"
 		"#.parse().unwrap();
-		tree.update(r#"
-			value = 100
-			name = "whatever"
-		"#);
 
 		debug!("{:?}", tree);
 	}
